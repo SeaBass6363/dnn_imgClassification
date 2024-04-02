@@ -10,10 +10,10 @@ from torch.multiprocessing import Process
 
 # Initialize distributed training environment
 def init_process(rank, size, fn, backend='gloo'):
-    os.environ['MASTER_ADDR'] = 'master_vm_ip_address' # Replace with IP address of VM that the script is being run on
-    os.environ['MASTER_PORT'] = '1234'  # Choose an available port number (higher than 1024)
-    os.environ['WORLD_SIZE'] = str(size)  # Number of VMs participating in training (so 2)
-    os.environ['RANK'] = str(rank)  # Rank of the current VM (0 or 1)
+    os.environ['MASTER_ADDR'] = '20.51.248.5' # Replace with IP address of VM that the script is being run on
+    os.environ['MASTER_PORT'] = '12345'  # Choose an available port number (higher than 1024)
+    os.environ['WORLD_SIZE'] = str(2)  # Number of VMs participating in training (so 2)
+    os.environ['RANK'] = str(0)  # Rank of the current VM (0 or 1)
 
     dist.init_process_group(backend=backend, init_method='env://', rank=rank, world_size=size)
     fn(rank, size)
