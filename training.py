@@ -72,6 +72,10 @@ def train(rank, size):
 
     print(f"Finished Training on Rank {rank}")
 
+    # Save the trained model
+    if rank == 0:  # Save only from one process to avoid multiple saves
+        torch.save(model.state_dict(), 'trained_model.pth')
+
 if __name__ == '__main__':
     # Set up multiprocessing
     import multiprocessing as mp
