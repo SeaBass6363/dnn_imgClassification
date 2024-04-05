@@ -1,104 +1,89 @@
-import torch
-import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
-from datautils import MyTrainDataset
-
-import torch.multiprocessing as mp
-from torch.utils.data.distributed import DistributedSampler
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.distributed import init_process_group, destroy_process_group
 import os
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.multiprocessing import Process
 
+# Initialize distributed training environment
+def init_process(rank, size, fn, backend='gloo'):
+    os.environ['MASTER_ADDR'] = '10.1.1.6' # Replace with IP address of VM that the script is being run on
+    os.environ['MASTER_PORT'] = '12345'  # Choose an available port number (higher than 1024)
+    os.environ['WORLD_SIZE'] = str(size)  # Number of VMs participating in training (so 2)
+    os.environ['RANK'] = str(rank)  # Rank of the current VM (0 or 1)
 
-def ddp_setup(rank, world_size):
-    """
-    Args:
-        rank: Unique identifier of each process
-        world_size: Total number of processes
-    """
-    os.environ["MASTER_ADDR"] = "20.51.248.5"
-    os.environ["MASTER_PORT"] = "12355"
-    init_process_group(backend="nccl", rank=rank, world_size=world_size)
-    torch.cuda.set_device(rank)
+    dist.init_process_group(backend=backend, init_method='env://', rank=rank, world_size=size)
+    fn(rank, size)
 
-class Trainer:
-    def __init__(
-        self,
-        model: torch.nn.Module,
-        train_data: DataLoader,
-        optimizer: torch.optim.Optimizer,
-        gpu_id: int,
-        save_every: int,
-    ) -> None:
-        self.gpu_id = gpu_id
-        self.model = model.to(gpu_id)
-        self.train_data = train_data
-        self.optimizer = optimizer
-        self.save_every = save_every
-        self.model = DDP(model, device_ids=[gpu_id])
+# Define the model
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
 
-    def _run_batch(self, source, targets):
-        self.optimizer.zero_grad()
-        output = self.model(source)
-        loss = F.cross_entropy(output, targets)
-        loss.backward()
-        self.optimizer.step()
+    def forward(self, x):
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = self.pool(torch.relu(self.conv2(x)))
+        x = torch.flatten(x, 1) # flatten all dimensions except batch
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
-    def _run_epoch(self, epoch):
-        b_sz = len(next(iter(self.train_data))[0])
-        print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
-        self.train_data.sampler.set_epoch(epoch)
-        for source, targets in self.train_data:
-            source = source.to(self.gpu_id)
-            targets = targets.to(self.gpu_id)
-            self._run_batch(source, targets)
+def train(rank, size):
+    # Set up model, loss function, optimizer, and data loaders
+    model = Net()
+    model = DDP(model)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
 
-    def _save_checkpoint(self, epoch):
-        ckp = self.model.module.state_dict()
-        PATH = "checkpoint.pt"
-        torch.save(ckp, PATH)
-        print(f"Epoch {epoch} | Training checkpoint saved at {PATH}")
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    train_sampler = torch.utils.data.distributed.DistributedSampler(trainset, num_replicas=size, rank=rank)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=False, num_workers=2, sampler=train_sampler)
 
-    def train(self, max_epochs: int):
-        for epoch in range(max_epochs):
-            self._run_epoch(epoch)
-            if self.gpu_id == 0 and epoch % self.save_every == 0:
-                self._save_checkpoint(epoch)
+    # Training
+    for epoch in range(5):  # loop over the dataset multiple times
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
 
+            optimizer.zero_grad()
 
-def load_train_objs():
-    train_set = MyTrainDataset(2048)  # load your dataset
-    model = torch.nn.Linear(20, 1)  # load your model
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
-    return train_set, model, optimizer
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
+            # print statistics
+            running_loss += loss.item()
+            if i % 2000 == 1999:  # print every 2000 mini-batches
+                print(f"[{rank}, {epoch + 1:3d}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
+                running_loss = 0.0
 
-def prepare_dataloader(dataset: Dataset, batch_size: int):
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
-        pin_memory=True,
-        shuffle=False,
-        sampler=DistributedSampler(dataset)
-    )
+    print(f"Finished Training on Rank {rank}")
 
+if __name__ == '__main__':
+    # Set up multiprocessing
+    import multiprocessing as mp
+    mp.set_start_method('spawn')
 
-def main(rank: int, world_size: int, save_every: int, total_epochs: int, batch_size: int):
-    ddp_setup(rank, world_size)
-    dataset, model, optimizer = load_train_objs()
-    train_data = prepare_dataloader(dataset, batch_size)
-    trainer = Trainer(model, train_data, optimizer, rank, save_every)
-    trainer.train(total_epochs)
-    destroy_process_group()
+    # Run the training function on each VM
+    size = 2  # Number of VMs
+    processes = []
+    for rank in range(size):
+        p = mp.Process(target=init_process, args=(rank, size, train))
+        p.start()
+        processes.append(p)
 
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='simple distributed training job')
-    parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
-    parser.add_argument('save_every', type=int, help='How often to save a snapshot')
-    parser.add_argument('--batch_size', default=32, type=int, help='Input batch size on each device (default: 32)')
-    args = parser.parse_args()
-    
-    world_size = torch.cuda.device_count()
-    mp.spawn(main, args=(world_size, args.save_every, args.total_epochs, args.batch_size), nprocs=world_size)
+    for p in processes:
+        p.join()
