@@ -11,6 +11,7 @@ from torch.multiprocessing import Process
 # Initialize distributed training environment
 def init_process(rank, size, fn, backend='gloo'):
     os.environ['MASTER_ADDR'] = '10.1.1.6' # Replace with IP address of VM that the script is being run on
+    os.environ['MASTER_PORT'] = '12345'  # Choose an available port number (higher than 1024)
     os.environ['WORLD_SIZE'] = str(2)  # Number of VMs participating in training (so 2)
     os.environ['RANK'] = str(0)  # Rank of the current VM (0 or 1)
 
