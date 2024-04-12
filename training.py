@@ -15,7 +15,10 @@ import argparse
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
+
 dist.init_process_group(backend='gloo')
+local_rank = int(os.environ['LOCAL_RANK'])
+global_rank = int(os.environ['RANK'])
 
 # Define the model
 class Net(nn.Module):
@@ -89,15 +92,10 @@ def train():
     if rank == 0:  # Save only from one process to avoid multiple saves
         torch.save(model.state_dict(), 'trained_model.pth')
 
-if __name__ == '__main__':
-
-    local_rank = int(os.environ['LOCAL_RANK'])
-    global_rank = int(os.environ['RANK'])
-
-    
+if __name__ == '__main__':    
 
     train()
 
-    destroy_process_group()
+    #destroy_process_group()
     #fn(rank, size)
     
