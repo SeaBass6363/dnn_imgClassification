@@ -15,7 +15,7 @@ import argparse
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-
+dist.init_process_group(backend='gloo')
 
 # Define the model
 class Net(nn.Module):
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     local_rank = int(os.environ['LOCAL_RANK'])
     global_rank = int(os.environ['RANK'])
 
-    dist.init_process_group(backend='gloo')
+    
 
     train()
 
