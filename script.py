@@ -41,7 +41,7 @@ class Net(nn.Module):
 def train(rank, size):
     # Set up model, loss function, optimizer, and data loaders
     model = Net()
-    model = DDP(model, device_ids=[rank])
+    model = DDP(model)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -71,6 +71,10 @@ def train(rank, size):
                 running_loss = 0.0
 
     print(f"Finished Training on Rank {rank}")
+
+    # Save the trained model
+    if rank == 0:  # Save only from one process to avoid multiple saves
+        torch.save(model.state_dict(), 'trained_model.pth')
 
 if __name__ == '__main__':
     # Set up multiprocessing
