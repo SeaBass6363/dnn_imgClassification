@@ -63,3 +63,4 @@ python3 script.py
 - Changes can be made to the script using VIM or through the repo directly
 
 
+torchrun --nproc_per_node=2 --nnodes=2 --rdzv_id=123 --rdzv_backend=gloo --rdzv_endpoint=IP_ADDR_MASTER_NODE:12345 train.py --batch_size 8 --model_folder "~/cnn1/training_data"
