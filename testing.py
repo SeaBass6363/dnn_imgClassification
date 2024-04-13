@@ -24,7 +24,7 @@ class Net(nn.Module):
         return x
     
 
-def test(rank, size):
+def test():
     #Model Setup to evaluation mode
     model = Net()
     model.module.load_state_dict(torch.load('trained_model.pth'))
