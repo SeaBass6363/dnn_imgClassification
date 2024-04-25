@@ -63,10 +63,11 @@ class Trainer:
 
     def _load_snapshot(self, snapshot_path):
         # loc = f"Rank:{self.local_rank}"
-        snapshot = torch.load(snapshot_path)
-        self.model.load_state_dict(snapshot["MODEL_STATE"])
-        self.epochs_run = snapshot["EPOCHS_RUN"]
-        print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
+        if self.global_rank == 0:
+          snapshot = torch.load(snapshot_path)
+          self.model.load_state_dict(snapshot["MODEL_STATE"])
+          self.epochs_run = snapshot["EPOCHS_RUN"]
+          print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
 
 
     def _run_batch(self, inputs, labels):
@@ -97,7 +98,7 @@ class Trainer:
     def train(self, max_epochs: int):
         for epoch in range(self.epochs_run, max_epochs):
             self._run_epoch(epoch)
-            if self.local_rank == 0 and epoch % self.save_every == 0:
+            if self.global_rank == 0 and epoch % self.save_every == 0:
                 self._save_snapshot(epoch)
 
 
