@@ -43,20 +43,19 @@ class Net(nn.Module):
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+    
 class Trainer:
   def __init__(
       self,
       model: nn.Module,
       train_data: DataLoader,
       optimizer: optim.Optimizer,
-      criterion= nn.CrossEntropyLoss(),
   ) -> None:
       self.local_rank = int(os.environ["LOCAL_RANK"])
       self.global_rank = int(os.environ["RANK"])
       self.train_data = train_data
       self.model = model
       self.optimizer = optimizer
-      self.criterion = criterion,
       # self.save_every = save_every
       # self.epochs_run = 0
       # self.snapshot_path = snapshot_path
@@ -116,7 +115,7 @@ def main(total_epochs: int, batch_size: int):
     ddp_setup()
     train_set, model, optimizer = load_train_objs()
     train_data = prepare_dataloader(train_set, batch_size)
-    trainer = Trainer(train_data, model, optimizer)
+    trainer = Trainer(model, train_data, optimizer)
     trainer.train(total_epochs)
     destroy_process_group()
 
