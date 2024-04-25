@@ -81,8 +81,8 @@ class Trainer:
         print(f"[RANK{self.global_rank}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
         self.train_data.sampler.set_epoch(epoch)
         for inputs, labels in self.train_data:
-            source = source.to(self.local_rank)
-            targets = targets.to(self.local_rank)
+            inputs = inputs.to(self.local_rank)
+            labels = labels.to(self.local_rank)
             self._run_batch(inputs, labels)
 
     def _save_snapshot(self, epoch):
