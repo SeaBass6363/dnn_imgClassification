@@ -49,8 +49,6 @@ class Trainer:
         b_sz = len(next(iter(self.train_data))[0])
         print(f"Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
         for inputs, labels in self.train_data:
-            inputs = inputs.to(self.gpu_id)
-            labels = labels.to(self.gpu_id)
             self._run_batch(inputs, labels)
 
     def _save_checkpoint(self, epoch):
@@ -79,7 +77,7 @@ def prepare_dataloader(dataset: Dataset, batch_size: int):
     return DataLoader(
         dataset,
         batch_size=batch_size,
-        num_workers=2,
+        # num_workers=2,
         shuffle=True,
     )
 
