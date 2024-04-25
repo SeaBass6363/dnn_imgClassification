@@ -84,10 +84,11 @@ def prepare_dataloader(dataset: datasets, batch_size: int):
 
 
 def main(total_epochs, save_every, batch_size):
-    dataset, optimizer = load_train_objs()
-    train_data = prepare_dataloader(dataset, batch_size)
+    train_set, model, optimizer = load_train_objs()
+    train_data = prepare_dataloader(train_set, batch_size)
     trainer = Trainer(train_data, optimizer, save_every)
     trainer.train(total_epochs)
+
 
 
 if __name__ == "__main__":
