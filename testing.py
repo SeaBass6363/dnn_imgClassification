@@ -25,15 +25,11 @@ class Net(nn.Module):
         return x
     
 
-def test():
+def test(model_pth_name: str):
     #Model Setup to evaluation mode
     model = Net()
-    model.load_state_dict(torch.load('trained_model.pth'))
+    model.load_state_dict(torch.load(model_pth_name))
     model.eval() 
-
-    #Loading the trained model
-    # if rank ==0:
-    #     model.module.load_state_dict(torch.load('trained_model.pth'))
     
     # Define test data transformations
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -56,7 +52,11 @@ def test():
     print(f"Accuracy of the network on the test images: {accuracy:.2f}%")
 
 if __name__ == '__main__':
-    test()
+    import argparse
+    parser = argparse.ArgumentParser(description='simple distributed training job')
+    parser.add_argument('model_pth_name', type=str, help='Model for accuracy testing')
+    args = parser.parse_args()
+    test(args.model_pth_name)
 
 # loaded_model = Net()
 
