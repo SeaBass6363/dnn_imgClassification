@@ -15,15 +15,6 @@ from torch.distributed import init_process_group, destroy_process_group
 def ddp_setup():
     init_process_group(backend='gloo')
 
-# def init_process(rank, size, fn, backend='gloo'):
-#     os.environ['MASTER_ADDR'] = '10.1.1.6' # Replace with IP address of VM that the script is being run on
-#     os.environ['MASTER_PORT'] = '12345'  # Choose an available port number (higher than 1024)
-#     os.environ['WORLD_SIZE'] = str(2)  # Number of VMs participating in training (so 2)
-#     os.environ['RANK'] = str(0)  # Rank of the current VM (0 or 1)
-
-#     dist.init_process_group(backend=backend, init_method='env://', rank=rank, world_size=size)
-#     fn(rank, size)
-
 # Define the model
 class Net(nn.Module):
     def __init__(self):
@@ -56,12 +47,6 @@ class Trainer:
       self.train_data = train_data
       self.model = model
       self.optimizer = optimizer
-      # self.save_every = save_every
-      # self.epochs_run = 0
-      # self.snapshot_path = snapshot_path
-      # if os.path.exists(snapshot_path):
-      #     print("Loading snapshot")
-      #     self._load_snapshot(snapshot_path)
 
       self.model = DDP(self.model)
 
@@ -70,8 +55,12 @@ class Trainer:
       criterion = nn.CrossEntropyLoss()
       
       # Training
-      for epoch in range(5):  # loop over the dataset multiple times
+      for epoch in range(max_epochs):  # loop over the dataset multiple times
           running_loss = 0.0
+          
+          b_sz = len(next(iter(self.train_data))[0])
+          print(f"[RANK{self.global_rank}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
+      
           for i, data in enumerate(self.train_data, 0):
               # get the inputs; data is a list of [inputs, labels]
               inputs, labels = data
@@ -106,7 +95,6 @@ def prepare_dataloader(dataset: datasets, batch_size: int):
     return DataLoader(
         dataset,
         batch_size=batch_size,
-        # num_workers=2,
         shuffle=False,
         sampler=DistributedSampler(dataset)
     )
@@ -123,7 +111,6 @@ if __name__ == '__main__':
   import argparse
   parser = argparse.ArgumentParser(description='simple distributed training job')
   parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
-  # parser.add_argument('save_every', type=int, help='How often to save a snapshot')
   # parser.add_argument('--batch_size', default=4, type=int, help='Input batch size on each default: 32)')
   args = parser.parse_args()
   
