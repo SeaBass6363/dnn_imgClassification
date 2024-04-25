@@ -48,7 +48,7 @@ class Trainer:
         snapshot_path: str, 
     ) -> None:
         self.local_rank = int(os.environ["LOCAL_RANK"])
-        self.global_rank = int(os.environ["GLOBAL_RANK"])
+        self.global_rank = int(os.environ["RANK"])
         self.train_data = train_data
         self.model = model
         self.optimizer = optimizer
