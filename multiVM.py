@@ -60,7 +60,7 @@ class Trainer:
         self.model = DDP(self.model)
 
     def _load_snapshot(self, snapshot_path):
-        loc = f"cuda:{self.local_rank}"
+        loc = f"Rank:{self.local_rank}"
         snapshot = torch.load(snapshot_path, map_location=loc)
         self.model.load_state_dict(snapshot["MODEL_STATE"])
         self.epochs_run = snapshot["EPOCHS_RUN"]
@@ -93,7 +93,7 @@ class Trainer:
 
 
     def train(self, max_epochs: int):
-        for epoch in range(max_epochs):
+        for epoch in range(self.epochs_run, max_epochs):
             self._run_epoch(epoch)
             if self.local_rank == 0 and epoch % self.save_every == 0:
                 self._save_snapshot(epoch)
