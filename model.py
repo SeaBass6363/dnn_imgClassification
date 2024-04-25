@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import datasets, DataLoader
 import torch.nn.functional as F
 
 
@@ -67,13 +67,13 @@ class Trainer:
 
 def load_train_objs():
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    train_set = Dataset.CIFAR10(root='./data', train=True, download=True, transform=transform)  # load your dataset
+    train_set = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)  # load your dataset
     model = Net()  # load your model
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     return train_set, model, optimizer
 
 
-def prepare_dataloader(dataset: Dataset, batch_size: int):
+def prepare_dataloader(dataset: datasets, batch_size: int):
     return DataLoader(
         dataset,
         batch_size=batch_size,
