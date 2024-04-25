@@ -112,7 +112,7 @@ def prepare_dataloader(dataset: datasets, batch_size: int):
         sampler=DistributedSampler(dataset)
     )
 
-def main(save_every: int, total_epochs: int, batch_size: int):
+def main(total_epochs: int, batch_size: int):
     ddp_setup()
     train_set, model, optimizer = load_train_objs()
     train_data = prepare_dataloader(train_set, batch_size)
