@@ -57,10 +57,7 @@ class Trainer:
       # Training
       for epoch in range(max_epochs):  # loop over the dataset multiple times
           running_loss = 0.0
-          
-          b_sz = len(next(iter(self.train_data))[0])
-          print(f"[RANK{self.global_rank}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
-      
+         
           for i, data in enumerate(self.train_data, 0):
               # get the inputs; data is a list of [inputs, labels]
               inputs, labels = data
@@ -75,7 +72,7 @@ class Trainer:
               # print statistics
               running_loss += loss.item()
               if i % 2000 == 1999:  # print every 2000 mini-batches
-                  print(f"[RANK {self.global_rank}, Epoch{epoch + 1:3d}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
+                  print(f"[RANK{self.global_rank}, Epoch{epoch + 1:3d}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
                   running_loss = 0.0
 
       print(f"Finished Training on Rank {self.global_rank}")
