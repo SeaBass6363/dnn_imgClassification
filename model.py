@@ -32,10 +32,12 @@ class Trainer:
     def __init__(
         self,
         train_data: DataLoader,
+        model: nn.Module,
         optimizer: optim.Optimizer,
         save_every: int, 
     ) -> None:
         self.train_data = train_data
+        self.model = model
         self.optimizer = optimizer
         self.save_every = save_every
 
@@ -86,7 +88,7 @@ def prepare_dataloader(dataset: datasets, batch_size: int):
 def main(total_epochs, save_every, batch_size):
     train_set, model, optimizer = load_train_objs()
     train_data = prepare_dataloader(train_set, batch_size)
-    trainer = Trainer(train_data, optimizer, save_every)
+    trainer = Trainer(train_data, model, optimizer, save_every)
     trainer.train(total_epochs)
 
 
