@@ -86,7 +86,7 @@ class Trainer:
               # print statistics
               running_loss += loss.item()
               if i % 2000 == 1999:  # print every 2000 mini-batches
-                  print(f"[RANK {self.global_rank}, {epoch + 1:3d}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
+                  print(f"[RANK {self.global_rank}, Epoch{epoch + 1:3d}, {i + 1:5d}] loss: {running_loss / 2000:.3f}")
                   running_loss = 0.0
 
       print(f"Finished Training on Rank {self.global_rank}")
