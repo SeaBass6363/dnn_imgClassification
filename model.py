@@ -108,8 +108,6 @@ if __name__ == '__main__':
   import argparse
   parser = argparse.ArgumentParser(description='simple distributed training job')
   parser.add_argument('total_epochs', type=int, help='Total epochs to train the model')
-  # parser.add_argument('--batch_size', default=4, type=int, help='Input batch size on each default: 32)')
   args = parser.parse_args()
   
-  # main(args.total_epochs, args.save_every, 4)
   main(args.total_epochs, 4)
