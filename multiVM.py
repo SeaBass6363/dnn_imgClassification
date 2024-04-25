@@ -62,8 +62,8 @@ class Trainer:
         self.model = DDP(self.model)
 
     def _load_snapshot(self, snapshot_path):
-        loc = f"Rank:{self.local_rank}"
-        snapshot = torch.load(snapshot_path, map_location=loc)
+        # loc = f"Rank:{self.local_rank}"
+        snapshot = torch.load(snapshot_path)
         self.model.load_state_dict(snapshot["MODEL_STATE"])
         self.epochs_run = snapshot["EPOCHS_RUN"]
         print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
