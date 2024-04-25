@@ -96,7 +96,7 @@ class Trainer:
 
 
     def train(self, max_epochs: int):
-        for epoch in range(max_epochs):
+        for epoch in range(self.epochs_run, max_epochs):
             self._run_epoch(epoch)
             if self.global_rank == 0 and epoch % self.save_every == 0:
                 self._save_snapshot(epoch)
@@ -121,7 +121,7 @@ def prepare_dataloader(dataset: datasets, batch_size: int):
     )
 
 
-def main(save_every: int, total_epochs: int, batch_size: int, snapshot_path: str = "snapshot.pt"):
+def main(total_epochs: int, save_every: int, batch_size: int, snapshot_path: str = "snapshot.pt"):
     ddp_setup()
     train_set, model, optimizer = load_train_objs()
     train_data = prepare_dataloader(train_set, batch_size)
