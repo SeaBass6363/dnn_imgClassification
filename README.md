@@ -1,4 +1,4 @@
-# Cloud Computing Project: Distributed DNN Model Training For Image Classification
+# Cloud Computing Project: Distributed CNN Model Training For Image Classification
 
 This repository contains the code and instructions for setting up a distributed DNN model training project on Azure. The project focuses on training a DNN model for image detection using PyTorch and VMs in a distributed fashion.
 
